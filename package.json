@@ -29,7 +29,7 @@
     "test:ci": "npm run lint:check && npm run format:check && npm run test:cov && npm run test:e2e",
     "db:setup": "ts-node -r tsconfig-paths/register scripts/setup-db.ts",
     "db:teardown": "ts-node -r tsconfig-paths/register scripts/setup-db.ts teardown",
-    "db:reset": "npm run db:teardown && npm run db:setup",
+    "db:reset": "echo '⚠️  WARNING: This will drop your database. Set DB_CONFIRM_RESET=yes to proceed.' && test \"$DB_CONFIRM_RESET\" = 'yes' && npm run db:teardown && npm run db:setup || echo '❌ Aborted: Set DB_CONFIRM_RESET=yes to confirm.'",
     "db:migrate": "npm run migration:run",
     "db:rollback": "npm run migration:revert",
     "db:init": "npm install && npm run db:setup",

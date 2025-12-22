@@ -123,7 +123,7 @@ async function setupAdminConnection(config: SetupConfig): Promise<void> {
         const queries = [
           `GRANT CONNECT ON DATABASE ${dbName} TO ${appUser};`,
           `GRANT USAGE ON SCHEMA public TO ${appUser};`,
-          `GRANT CREATE ON SCHEMA public TO ${appUser};`,
+          // Do NOT grant CREATE in production to prevent app from creating unmanaged tables
           `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${appUser};`,
           `ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${appUser};`,
           `GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${appUser};`,

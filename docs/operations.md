@@ -6,8 +6,8 @@ This document covers database management, maintenance routines, and system-level
 
 We use TypeORM CLI for all schema changes. **Manual SQL changes in production are strictly forbidden.**
 
-| Command                   | Description                                            |
-| :------------------------ | :----------------------------------------------------- |
+| Command                      | Description                                            |
+| :--------------------------- | :----------------------------------------------------- |
 | `npm run migration:generate` | Generate a new migration file based on entity changes. |
 | `npm run migration:run`      | Apply all pending migrations.                          |
 | `npm run migration:revert`   | Revert the last executed migration.                    |
@@ -34,3 +34,12 @@ Audit logs are stored in `system_audit_logs`.
 
 - **Backup**: Use `pg_dump` for daily backups.
 - **RLS Safety**: If RLS fails, the system defaults to "Deny All".
+
+## 5. Security Hardening
+
+- **JWT Secret**: In production, `JWT_SECRET` must be set. Startup fails if missing. Use strong, rotated secrets or a JWKs strategy.
+- **TypeORM Logging**: Disabled by default in production. Enable via `TYPEORM_LOGGING=true` only for controlled debugging.
+- **Database SSL**: Set `DB_SSL=true` to enable TLS. Control certificate verification with `DB_SSL_REJECT_UNAUTHORIZED` (defaults to strict verification).
+- **RLS Session Requirement**: RLS policies deny access when `app.current_tenant_id` is not set, enforcing fail-closed behavior.
+- **App Role Privileges**: The application role does not have `CREATE` on `public`. Run schema changes with admin credentials.
+- **Audit Redaction**: Audit logs automatically redact `password*`, `*token`, and `secret` fields to prevent sensitive data leakage.

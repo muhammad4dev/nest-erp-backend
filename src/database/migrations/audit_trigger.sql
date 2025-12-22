@@ -19,6 +19,27 @@ BEGIN
         v_new_data := to_jsonb(NEW);
     END IF;
 
+    -- Redact sensitive fields commonly present in identity/auth tables
+    IF v_old_data IS NOT NULL THEN
+        v_old_data := v_old_data 
+            - 'password'
+            - 'passwordHash'
+            - 'password_hash'
+            - 'refresh_token'
+            - 'access_token'
+            - 'secret';
+    END IF;
+
+    IF v_new_data IS NOT NULL THEN
+        v_new_data := v_new_data 
+            - 'password'
+            - 'passwordHash'
+            - 'password_hash'
+            - 'refresh_token'
+            - 'access_token'
+            - 'secret';
+    END IF;
+
     INSERT INTO system_audit_logs (
         id,
         tenant_id,

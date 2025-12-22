@@ -32,8 +32,14 @@ BEGIN
             CREATE POLICY tenant_isolation_policy ON %I
             FOR ALL
             TO public
-            USING (tenant_id = current_setting(''app.current_tenant_id'', true)::uuid)
-            WITH CHECK (tenant_id = current_setting(''app.current_tenant_id'', true)::uuid)
+            USING (
+              current_setting(''app.current_tenant_id'', true) IS NOT NULL
+              AND tenant_id = current_setting(''app.current_tenant_id'', true)::uuid
+            )
+            WITH CHECK (
+              current_setting(''app.current_tenant_id'', true) IS NOT NULL
+              AND tenant_id = current_setting(''app.current_tenant_id'', true)::uuid
+            )
         ', table_record.table_name);
         
         RAISE NOTICE 'Applied RLS policy to table: %', table_record.table_name;

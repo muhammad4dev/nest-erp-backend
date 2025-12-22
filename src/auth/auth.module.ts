@@ -11,7 +11,16 @@ import { IdentityModule } from '../modules/identity/identity.module';
     IdentityModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'super_secret_key',
+      // Require JWT secret in production; allow dev/test default otherwise
+      secret:
+        process.env.JWT_SECRET ||
+        (process.env.NODE_ENV === 'production'
+          ? (() => {
+              throw new Error(
+                'JWT_SECRET must be set in environment for production.',
+              );
+            })()
+          : 'dev_only_insecure_secret'),
       signOptions: { expiresIn: '15m' },
     }),
   ],
