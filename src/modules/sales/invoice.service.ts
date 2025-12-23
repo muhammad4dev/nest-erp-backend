@@ -8,6 +8,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Invoice, InvoiceStatus, InvoiceType } from './entities/invoice.entity';
 import { InvoiceLine } from './entities/invoice-line.entity';
 import { SalesOrder, SalesOrderStatus } from './entities/sales-order.entity';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class InvoiceService {
@@ -140,10 +141,21 @@ export class InvoiceService {
    * Get invoice by ID
    */
   async findOne(id: string): Promise<Invoice> {
-    const invoice = await this.invoiceRepo.findOne({
-      where: { id },
-      relations: ['partner', 'lines', 'lines.product', 'salesOrder'],
-    });
+    const tenantId = TenantContext.getTenantId();
+
+    const qb = this.invoiceRepo
+      .createQueryBuilder('inv')
+      .leftJoinAndSelect('inv.partner', 'partner')
+      .leftJoinAndSelect('inv.lines', 'lines')
+      .leftJoinAndSelect('lines.product', 'product')
+      .leftJoinAndSelect('inv.salesOrder', 'salesOrder')
+      .where('inv.id = :id', { id });
+
+    if (tenantId) {
+      qb.andWhere('inv.tenantId = :tenantId', { tenantId });
+    }
+
+    const invoice = await qb.getOne();
 
     if (!invoice) {
       throw new NotFoundException('Invoice not found');

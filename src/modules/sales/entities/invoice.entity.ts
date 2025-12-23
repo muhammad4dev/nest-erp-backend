@@ -28,7 +28,11 @@ export enum InvoiceStatus {
 }
 
 @Entity('invoices')
-@Index(['partnerId', 'status'])
+@Index(['tenantId', 'status'])
+@Index(['partnerId', 'createdAt'])
+@Index(['tenantId', 'createdAt'])
+@Index(['tenantId', 'partnerId'])
+@Index(['tenantId', 'status', 'createdAt'])
 export class Invoice extends BaseEntity {
   @ApiProperty({ example: 'INV-2025-0001' })
   @Column({ unique: true })
