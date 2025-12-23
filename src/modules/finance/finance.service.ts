@@ -16,6 +16,7 @@ import {
   CreatePaymentTermDto,
   UpdatePaymentTermDto,
 } from './dto/payment-term.dto';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class FinanceService {
@@ -89,6 +90,7 @@ export class FinanceService {
   async getTrialBalance(
     query: TrialBalanceQueryDto,
   ): Promise<TrialBalanceEntry[]> {
+    const tenantId = TenantContext.getTenantId();
     const qb = this.journalLineRepo
       .createQueryBuilder('line')
       .leftJoinAndSelect('line.account', 'account')
@@ -104,6 +106,10 @@ export class FinanceService {
       .orderBy('account.code');
 
     qb.where('entry.status = :status', { status: 'POSTED' });
+
+    if (tenantId) {
+      qb.andWhere('line.tenantId = :tenantId', { tenantId });
+    }
 
     if (query.startDate) {
       qb.andWhere('entry.transactionDate >= :startDate', {
@@ -132,11 +138,16 @@ export class FinanceService {
   async getGeneralLedger(
     query: GeneralLedgerQueryDto,
   ): Promise<GeneralLedgerEntry[]> {
+    const tenantId = TenantContext.getTenantId();
     const qb = this.journalLineRepo
       .createQueryBuilder('line')
       .leftJoinAndSelect('line.account', 'account')
       .leftJoinAndSelect('line.journalEntry', 'entry')
       .where('entry.status = :status', { status: 'POSTED' });
+
+    if (tenantId) {
+      qb.andWhere('line.tenantId = :tenantId', { tenantId });
+    }
 
     if (query.accountId) {
       qb.andWhere('line.accountId = :accountId', {
