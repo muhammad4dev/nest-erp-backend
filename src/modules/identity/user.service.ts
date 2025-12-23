@@ -14,6 +14,7 @@ import {
   ChangePasswordDto,
 } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { hashPassword } from '../../common/security/password.util';
 
 @Injectable()
 export class UserService {
@@ -33,7 +34,7 @@ export class UserService {
       throw new ConflictException('Email already registered');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const passwordHash = await hashPassword(dto.password);
 
     const user = this.userRepo.create({
       email: dto.email,
@@ -114,7 +115,7 @@ export class UserService {
       throw new BadRequestException('Current password is incorrect');
     }
 
-    user.passwordHash = await bcrypt.hash(dto.newPassword, 12);
+    user.passwordHash = await hashPassword(dto.newPassword);
     await this.userRepo.save(user);
 
     return { message: 'Password changed successfully' };
