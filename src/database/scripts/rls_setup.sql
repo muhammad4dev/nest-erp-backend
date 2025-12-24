@@ -27,18 +27,31 @@ BEGIN
         -- Drop existing policy if it exists
         EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_policy ON %I', table_record.table_name);
         
-        -- Create tenant isolation policy
+        -- Create tenant isolation policy using CASE to prevent UUID cast errors
+        -- This ensures safe short-circuit evaluation:
+        -- 1. NULL tenant_id setting -> deny access
+        -- 2. Empty string -> deny access
+        -- 3. Invalid UUID format -> deny access
+        -- 4. Valid UUID that matches -> allow access
         EXECUTE format('
             CREATE POLICY tenant_isolation_policy ON %I
             FOR ALL
             TO public
             USING (
-              current_setting(''app.current_tenant_id'', true) IS NOT NULL
-              AND tenant_id = current_setting(''app.current_tenant_id'', true)::uuid
+              CASE 
+                WHEN current_setting(''app.current_tenant_id'', true) IS NULL THEN false
+                WHEN current_setting(''app.current_tenant_id'', true) = '''' THEN false
+                WHEN current_setting(''app.current_tenant_id'', true) !~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'' THEN false
+                ELSE tenant_id = current_setting(''app.current_tenant_id'', true)::uuid
+              END
             )
             WITH CHECK (
-              current_setting(''app.current_tenant_id'', true) IS NOT NULL
-              AND tenant_id = current_setting(''app.current_tenant_id'', true)::uuid
+              CASE 
+                WHEN current_setting(''app.current_tenant_id'', true) IS NULL THEN false
+                WHEN current_setting(''app.current_tenant_id'', true) = '''' THEN false
+                WHEN current_setting(''app.current_tenant_id'', true) !~ ''^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'' THEN false
+                ELSE tenant_id = current_setting(''app.current_tenant_id'', true)::uuid
+              END
             )
         ', table_record.table_name);
         

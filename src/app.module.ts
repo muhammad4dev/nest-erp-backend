@@ -1,6 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { databaseConfig } from './config/database.config';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
@@ -14,6 +15,7 @@ import { PosModule } from './modules/pos/pos.module';
 import { I18nModule } from './modules/i18n/i18n.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { TenantTransactionInterceptor } from './common/interceptors/tenant-transaction.interceptor';
 
 @Module({
   imports: [
@@ -31,6 +33,12 @@ import { TenantMiddleware } from './common/middleware/tenant.middleware';
     ComplianceModule,
   ],
   controllers: [AppController],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TenantTransactionInterceptor,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

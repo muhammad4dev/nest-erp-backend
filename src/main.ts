@@ -3,7 +3,12 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import { patchTypeORMRepository } from './common/patches/typeorm-repository.patch';
+
 async function bootstrap() {
+  // Patch TypeORM Repositories to be Tenant-Aware globally
+  patchTypeORMRepository();
+
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -25,6 +30,17 @@ async function bootstrap() {
     .addTag('i18n', 'Localization endpoints')
     .addTag('compliance', 'ETA eInvoicing compliance endpoints')
     .addBearerAuth()
+    .addApiKey(
+      {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-tenant-id',
+        description:
+          'Tenant identifier (required for all requests; enforces RLS)',
+      },
+      'tenant-id',
+    )
+    .addSecurityRequirements('tenant-id')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
