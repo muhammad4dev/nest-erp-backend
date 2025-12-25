@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../modules/identity/entities/user.entity';
 import { RefreshToken } from '../modules/identity/entities/refresh-token.entity';
 import { JwtService } from '@nestjs/jwt';
+import { TenantContext } from '../common/context/tenant.context';
 import * as bcrypt from 'bcrypt';
 import { createHash } from 'crypto';
 
@@ -44,6 +45,10 @@ describe('AuthService', () => {
     mockUserRepo = createMockUserRepository();
     mockRefreshTokenRepo = createMockRefreshTokenRepository();
     mockJwtService = createMockJwtService();
+
+    // Mock TenantContext to return a valid tenant ID
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('t-001');
+    jest.spyOn(TenantContext, 'getEntityManager').mockReturnValue(undefined); // Fallback to base repo
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

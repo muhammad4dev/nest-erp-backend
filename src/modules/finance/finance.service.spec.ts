@@ -31,6 +31,12 @@ describe('FinanceService', () => {
   };
 
   beforeEach(async () => {
+    // Mock TenantContext for all tests
+    jest.spyOn(TenantContext, 'getTenantId').mockReturnValue('test-tenant-id');
+    jest
+      .spyOn(TenantContext, 'requireTenantId')
+      .mockReturnValue('test-tenant-id');
+
     // Create a fresh query builder mock for each test
     mockQueryBuilder = {
       leftJoinAndSelect: jest.fn().mockReturnThis(),
