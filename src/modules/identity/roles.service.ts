@@ -4,15 +4,22 @@ import { Repository, In } from 'typeorm';
 import { Role, Permission } from './entities/role.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class RolesService {
+  private roleRepo: Repository<Role>;
+  private permissionRepo: Repository<Permission>;
+
   constructor(
     @InjectRepository(Role)
-    private readonly roleRepo: Repository<Role>,
+    roleRepoBase: Repository<Role>,
     @InjectRepository(Permission)
-    private readonly permissionRepo: Repository<Permission>,
-  ) {}
+    permissionRepoBase: Repository<Permission>,
+  ) {
+    this.roleRepo = wrapTenantRepository(roleRepoBase);
+    this.permissionRepo = wrapTenantRepository(permissionRepoBase);
+  }
 
   async create(dto: CreateRoleDto): Promise<Role> {
     const role = this.roleRepo.create({

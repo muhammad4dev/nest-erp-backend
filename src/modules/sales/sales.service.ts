@@ -15,18 +15,27 @@ import {
 } from './dto/sales-reports.dto';
 import { Invoice, InvoiceStatus } from './entities/invoice.entity';
 import { ARAgingQueryDto, ARAgingEntry } from './dto/account-receivable.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class SalesService {
+  private orderRepo: Repository<SalesOrder>;
+  private lineRepo: Repository<SalesOrderLine>;
+  private invoiceRepo: Repository<Invoice>;
+
   constructor(
     @InjectRepository(SalesOrder)
-    private orderRepo: Repository<SalesOrder>,
+    orderRepoBase: Repository<SalesOrder>,
     @InjectRepository(SalesOrderLine)
-    private lineRepo: Repository<SalesOrderLine>,
+    lineRepoBase: Repository<SalesOrderLine>,
     @InjectRepository(Invoice)
-    private invoiceRepo: Repository<Invoice>,
+    invoiceRepoBase: Repository<Invoice>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.orderRepo = wrapTenantRepository(orderRepoBase);
+    this.lineRepo = wrapTenantRepository(lineRepoBase);
+    this.invoiceRepo = wrapTenantRepository(invoiceRepoBase);
+  }
 
   // ========== CRUD OPERATIONS ==========
 

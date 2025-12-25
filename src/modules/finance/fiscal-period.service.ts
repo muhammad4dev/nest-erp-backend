@@ -11,15 +11,22 @@ import {
   CreateFiscalPeriodDto,
   UpdateFiscalPeriodDto,
 } from './dto/fiscal-period.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class FiscalPeriodService {
+  private periodRepository: Repository<FiscalPeriod>;
+  private journalRepository: Repository<JournalEntry>;
+
   constructor(
     @InjectRepository(FiscalPeriod)
-    private periodRepository: Repository<FiscalPeriod>,
+    periodRepositoryBase: Repository<FiscalPeriod>,
     @InjectRepository(JournalEntry)
-    private journalRepository: Repository<JournalEntry>,
-  ) {}
+    journalRepositoryBase: Repository<JournalEntry>,
+  ) {
+    this.periodRepository = wrapTenantRepository(periodRepositoryBase);
+    this.journalRepository = wrapTenantRepository(journalRepositoryBase);
+  }
 
   async create(dto: CreateFiscalPeriodDto): Promise<FiscalPeriod> {
     // Check for overlapping periods

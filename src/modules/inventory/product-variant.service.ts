@@ -11,15 +11,22 @@ import {
   CreateProductVariantDto,
   UpdateProductVariantDto,
 } from './dto/product-variant.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class ProductVariantService {
+  private variantRepo: Repository<ProductVariant>;
+  private productRepo: Repository<Product>;
+
   constructor(
     @InjectRepository(ProductVariant)
-    private variantRepo: Repository<ProductVariant>,
+    variantRepoBase: Repository<ProductVariant>,
     @InjectRepository(Product)
-    private productRepo: Repository<Product>,
-  ) {}
+    productRepoBase: Repository<Product>,
+  ) {
+    this.variantRepo = wrapTenantRepository(variantRepoBase);
+    this.productRepo = wrapTenantRepository(productRepoBase);
+  }
 
   async create(dto: CreateProductVariantDto): Promise<ProductVariant> {
     // Verify parent product exists

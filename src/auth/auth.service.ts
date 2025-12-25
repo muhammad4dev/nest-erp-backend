@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../modules/identity/entities/user.entity';
 import { RefreshToken } from '../modules/identity/entities/refresh-token.entity';
+import { TenantContext } from '../common/context/tenant.context';
+import { wrapTenantRepository } from '../common/repositories/tenant-repository-wrapper';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
 
@@ -16,18 +18,28 @@ interface JwtPayload {
 
 @Injectable()
 export class AuthService {
+  private usersRepository: Repository<User>;
+  private refreshTokenRepo: Repository<RefreshToken>;
+
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>,
+    usersRepositoryBase: Repository<User>,
     @InjectRepository(RefreshToken)
-    private refreshTokenRepo: Repository<RefreshToken>,
+    refreshTokenRepoBase: Repository<RefreshToken>,
     private jwtService: JwtService,
-  ) {}
+  ) {
+    this.usersRepository = wrapTenantRepository(usersRepositoryBase);
+    this.refreshTokenRepo = wrapTenantRepository(refreshTokenRepoBase);
+  }
 
   async validateUser(
     email: string,
     pass: string,
   ): Promise<Partial<User> | null> {
+    const tenantId = TenantContext.getTenantId();
+    if (!tenantId) {
+      return null;
+    }
     const user = await this.usersRepository.findOne({
       where: { email },
       select: ['id', 'email', 'passwordHash', 'tenantId', 'isActive'],

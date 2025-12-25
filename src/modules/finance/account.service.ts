@@ -7,13 +7,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class AccountService {
+  private accountRepository: Repository<Account>;
+
   constructor(
     @InjectRepository(Account)
-    private accountRepository: Repository<Account>,
-  ) {}
+    accountRepositoryBase: Repository<Account>,
+  ) {
+    this.accountRepository = wrapTenantRepository(accountRepositoryBase);
+  }
 
   async create(dto: CreateAccountDto): Promise<Account> {
     const existing = await this.accountRepository.findOne({

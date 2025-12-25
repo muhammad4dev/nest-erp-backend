@@ -8,16 +8,23 @@ import { DataSource, Repository } from 'typeorm';
 import { JournalEntry, JournalStatus } from './entities/journal-entry.entity';
 import { JournalLine } from './entities/journal-line.entity';
 import { FiscalPeriod } from './entities/fiscal-period.entity';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class JournalEntryService {
+  private journalRepository: Repository<JournalEntry>;
+  private periodRepository: Repository<FiscalPeriod>;
+
   constructor(
     @InjectRepository(JournalEntry)
-    private journalRepository: Repository<JournalEntry>,
+    journalRepositoryBase: Repository<JournalEntry>,
     @InjectRepository(FiscalPeriod)
-    private periodRepository: Repository<FiscalPeriod>,
+    periodRepositoryBase: Repository<FiscalPeriod>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.journalRepository = wrapTenantRepository(journalRepositoryBase);
+    this.periodRepository = wrapTenantRepository(periodRepositoryBase);
+  }
 
   async create(data: Partial<JournalEntry>): Promise<JournalEntry> {
     const entry = this.journalRepository.create({

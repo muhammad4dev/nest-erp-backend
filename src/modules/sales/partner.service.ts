@@ -4,13 +4,18 @@ import { Repository } from 'typeorm';
 import { Partner } from './entities/partner.entity';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class PartnerService {
+  private partnerRepo: Repository<Partner>;
+
   constructor(
     @InjectRepository(Partner)
-    private partnerRepo: Repository<Partner>,
-  ) {}
+    partnerRepoBase: Repository<Partner>,
+  ) {
+    this.partnerRepo = wrapTenantRepository(partnerRepoBase);
+  }
 
   async create(dto: CreatePartnerDto): Promise<Partner> {
     const partner = this.partnerRepo.create(dto);

@@ -16,17 +16,24 @@ import {
   CreatePaymentTermDto,
   UpdatePaymentTermDto,
 } from './dto/payment-term.dto';
-import { TenantContext } from '../../common/context/tenant.context';
+import { applyTenantScope } from '../../common/utils/tenant-query.helper';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class FinanceService {
+  private journalLineRepo: Repository<JournalLine>;
+  private paymentTermRepo: Repository<PaymentTerm>;
+
   constructor(
     private readonly journalEntryService: JournalEntryService,
     @InjectRepository(JournalLine)
-    private journalLineRepo: Repository<JournalLine>,
+    journalLineRepoBase: Repository<JournalLine>,
     @InjectRepository(PaymentTerm)
-    private paymentTermRepo: Repository<PaymentTerm>,
-  ) {}
+    paymentTermRepoBase: Repository<PaymentTerm>,
+  ) {
+    this.journalLineRepo = wrapTenantRepository(journalLineRepoBase);
+    this.paymentTermRepo = wrapTenantRepository(paymentTermRepoBase);
+  }
 
   async createJournalEntry(
     description: string,
@@ -90,7 +97,6 @@ export class FinanceService {
   async getTrialBalance(
     query: TrialBalanceQueryDto,
   ): Promise<TrialBalanceEntry[]> {
-    const tenantId = TenantContext.getTenantId();
     const qb = this.journalLineRepo
       .createQueryBuilder('line')
       .leftJoinAndSelect('line.account', 'account')
@@ -105,11 +111,9 @@ export class FinanceService {
       .addGroupBy('account.name')
       .orderBy('account.code');
 
+    // Apply tenant scope and base filters
+    applyTenantScope(qb, 'line');
     qb.where('entry.status = :status', { status: 'POSTED' });
-
-    if (tenantId) {
-      qb.andWhere('line.tenantId = :tenantId', { tenantId });
-    }
 
     if (query.startDate) {
       qb.andWhere('entry.transactionDate >= :startDate', {
@@ -138,16 +142,14 @@ export class FinanceService {
   async getGeneralLedger(
     query: GeneralLedgerQueryDto,
   ): Promise<GeneralLedgerEntry[]> {
-    const tenantId = TenantContext.getTenantId();
     const qb = this.journalLineRepo
       .createQueryBuilder('line')
       .leftJoinAndSelect('line.account', 'account')
-      .leftJoinAndSelect('line.journalEntry', 'entry')
-      .where('entry.status = :status', { status: 'POSTED' });
+      .leftJoinAndSelect('line.journalEntry', 'entry');
 
-    if (tenantId) {
-      qb.andWhere('line.tenantId = :tenantId', { tenantId });
-    }
+    // Apply tenant scope and base filters
+    applyTenantScope(qb, 'line');
+    qb.where('entry.status = :status', { status: 'POSTED' });
 
     if (query.accountId) {
       qb.andWhere('line.accountId = :accountId', {

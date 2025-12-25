@@ -15,18 +15,27 @@ import {
   PurchaseOrder,
   PurchaseOrderStatus,
 } from './entities/purchase-order.entity';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class VendorBillService {
+  private billRepo: Repository<VendorBill>;
+  private lineRepo: Repository<VendorBillLine>;
+  private orderRepo: Repository<PurchaseOrder>;
+
   constructor(
     @InjectRepository(VendorBill)
-    private billRepo: Repository<VendorBill>,
+    billRepoBase: Repository<VendorBill>,
     @InjectRepository(VendorBillLine)
-    private lineRepo: Repository<VendorBillLine>,
+    lineRepoBase: Repository<VendorBillLine>,
     @InjectRepository(PurchaseOrder)
-    private orderRepo: Repository<PurchaseOrder>,
+    orderRepoBase: Repository<PurchaseOrder>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.billRepo = wrapTenantRepository(billRepoBase);
+    this.lineRepo = wrapTenantRepository(lineRepoBase);
+    this.orderRepo = wrapTenantRepository(orderRepoBase);
+  }
 
   /**
    * Create a vendor bill from a received purchase order

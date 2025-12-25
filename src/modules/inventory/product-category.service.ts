@@ -10,13 +10,18 @@ import {
   CreateProductCategoryDto,
   UpdateProductCategoryDto,
 } from './dto/product-category.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class ProductCategoryService {
+  private categoryRepo: Repository<ProductCategory>;
+
   constructor(
     @InjectRepository(ProductCategory)
-    private categoryRepo: Repository<ProductCategory>,
-  ) {}
+    categoryRepoBase: Repository<ProductCategory>,
+  ) {
+    this.categoryRepo = wrapTenantRepository(categoryRepoBase);
+  }
 
   async create(dto: CreateProductCategoryDto): Promise<ProductCategory> {
     const existing = await this.categoryRepo.findOne({

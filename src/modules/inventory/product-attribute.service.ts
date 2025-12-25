@@ -10,13 +10,18 @@ import {
   CreateProductAttributeDto,
   UpdateProductAttributeDto,
 } from './dto/product-attribute.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class ProductAttributeService {
+  private attributeRepo: Repository<ProductAttribute>;
+
   constructor(
     @InjectRepository(ProductAttribute)
-    private attributeRepo: Repository<ProductAttribute>,
-  ) {}
+    attributeRepoBase: Repository<ProductAttribute>,
+  ) {
+    this.attributeRepo = wrapTenantRepository(attributeRepoBase);
+  }
 
   async create(dto: CreateProductAttributeDto): Promise<ProductAttribute> {
     const existing = await this.attributeRepo.findOne({

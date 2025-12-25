@@ -15,15 +15,22 @@ import {
 } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 import { hashPassword } from '../../common/security/password.util';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class UserService {
+  private userRepo: Repository<User>;
+  private roleRepo: Repository<Role>;
+
   constructor(
     @InjectRepository(User)
-    private userRepo: Repository<User>,
+    userRepoBase: Repository<User>,
     @InjectRepository(Role)
-    private roleRepo: Repository<Role>,
-  ) {}
+    roleRepoBase: Repository<Role>,
+  ) {
+    this.userRepo = wrapTenantRepository(userRepoBase);
+    this.roleRepo = wrapTenantRepository(roleRepoBase);
+  }
 
   async create(dto: CreateUserDto, currentUserTenantId: string): Promise<User> {
     const existing = await this.userRepo.findOne({

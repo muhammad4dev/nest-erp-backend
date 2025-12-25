@@ -8,6 +8,9 @@ import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/require-permissions.decorator';
 import { UserService } from '../user.service';
 import { User } from '../entities/user.entity';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { TenantContext } from '../../../common/context/tenant.context';
 
 interface RequestWithUser extends Request {
   user: {
@@ -22,6 +25,7 @@ export class PermissionsGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private userService: UserService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -40,23 +44,52 @@ export class PermissionsGuard implements CanActivate {
       return false;
     }
 
-    // Fetch full user details with roles and permissions
-    const fullUser = (await this.userService.findOne(user.userId)) as User;
-    const userRoles = fullUser.roles || [];
-
-    // Flatten all permissions from all roles
-    const userPermissions = userRoles.flatMap((role) =>
-      role.permissions ? role.permissions.map((p) => p.action) : [],
-    );
-
-    const hasPermission = requiredPermissions.some((permission) =>
-      userPermissions.includes(permission),
-    );
-
-    if (!hasPermission) {
-      throw new ForbiddenException('Insufficient permissions');
+    const headerTenant = request.headers?.['x-tenant-id'] as string | undefined;
+    const tokenTenant = user.tenantId;
+    if (tokenTenant && headerTenant && tokenTenant !== headerTenant) {
+      return false;
     }
 
-    return true;
+    const qr = this.dataSource.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      await qr.query("SELECT set_config('app.current_tenant_id', $1, true)", [
+        tokenTenant ?? headerTenant,
+      ]);
+      await qr.query("SELECT set_config('app.current_user_id', $1, true)", [
+        user.userId,
+      ]);
+
+      const fullUser = (await TenantContext.run(
+        {
+          tenantId: tokenTenant ?? headerTenant ?? '',
+          userId: user.userId,
+          entityManager: qr.manager,
+        },
+        async () => this.userService.findOne(user.userId),
+      )) as User;
+
+      const userRoles = fullUser.roles || [];
+      const userPermissions = userRoles.flatMap((role) =>
+        role.permissions ? role.permissions.map((p) => p.action) : [],
+      );
+
+      const hasPermission = requiredPermissions.some((permission) =>
+        userPermissions.includes(permission),
+      );
+
+      if (!hasPermission) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
+
+      await qr.commitTransaction();
+      return true;
+    } catch (e) {
+      await qr.rollbackTransaction();
+      throw e;
+    } finally {
+      await qr.release();
+    }
   }
 }

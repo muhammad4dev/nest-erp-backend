@@ -9,18 +9,27 @@ import { Invoice, InvoiceStatus, InvoiceType } from './entities/invoice.entity';
 import { InvoiceLine } from './entities/invoice-line.entity';
 import { SalesOrder, SalesOrderStatus } from './entities/sales-order.entity';
 import { TenantContext } from '../../common/context/tenant.context';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class InvoiceService {
+  private invoiceRepo: Repository<Invoice>;
+  private lineRepo: Repository<InvoiceLine>;
+  private orderRepo: Repository<SalesOrder>;
+
   constructor(
     @InjectRepository(Invoice)
-    private invoiceRepo: Repository<Invoice>,
+    invoiceRepoBase: Repository<Invoice>,
     @InjectRepository(InvoiceLine)
-    private lineRepo: Repository<InvoiceLine>,
+    lineRepoBase: Repository<InvoiceLine>,
     @InjectRepository(SalesOrder)
-    private orderRepo: Repository<SalesOrder>,
+    orderRepoBase: Repository<SalesOrder>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.invoiceRepo = wrapTenantRepository(invoiceRepoBase);
+    this.lineRepo = wrapTenantRepository(lineRepoBase);
+    this.orderRepo = wrapTenantRepository(orderRepoBase);
+  }
 
   async findAll(status?: InvoiceStatus): Promise<Invoice[]> {
     const query = this.invoiceRepo

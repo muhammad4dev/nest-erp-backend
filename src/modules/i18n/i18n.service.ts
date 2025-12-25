@@ -2,13 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProductTranslation } from './entities/product-translation.entity';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class I18nService {
+  private transRepo: Repository<ProductTranslation>;
+
   constructor(
     @InjectRepository(ProductTranslation)
-    private transRepo: Repository<ProductTranslation>,
-  ) {}
+    transRepoBase: Repository<ProductTranslation>,
+  ) {
+    this.transRepo = wrapTenantRepository(transRepoBase);
+  }
 
   async addProductTranslation(
     productId: string,

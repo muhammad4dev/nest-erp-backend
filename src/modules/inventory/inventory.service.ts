@@ -19,20 +19,31 @@ import {
   StockValuationQueryDto,
   StockValuationEntry,
 } from './dto/inventory-reports.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class InventoryService {
+  private quantRepository: Repository<StockQuant>;
+  private productRepository: Repository<Product>;
+  private locationRepository: Repository<Location>;
+  private auditLogRepository: Repository<AuditLog>;
+
   constructor(
     @InjectRepository(StockQuant)
-    private quantRepository: Repository<StockQuant>,
+    quantRepositoryBase: Repository<StockQuant>,
     @InjectRepository(Product)
-    private productRepository: Repository<Product>,
+    productRepositoryBase: Repository<Product>,
     @InjectRepository(Location)
-    private locationRepository: Repository<Location>,
+    locationRepositoryBase: Repository<Location>,
     @InjectRepository(AuditLog)
-    private auditLogRepository: Repository<AuditLog>,
+    auditLogRepositoryBase: Repository<AuditLog>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.quantRepository = wrapTenantRepository(quantRepositoryBase);
+    this.productRepository = wrapTenantRepository(productRepositoryBase);
+    this.locationRepository = wrapTenantRepository(locationRepositoryBase);
+    this.auditLogRepository = wrapTenantRepository(auditLogRepositoryBase);
+  }
 
   // ========== PRODUCT CRUD ==========
 

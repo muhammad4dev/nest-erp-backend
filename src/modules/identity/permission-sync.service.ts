@@ -3,15 +3,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Permission } from './entities/role.entity';
 import { PERMISSIONS } from './constants/permissions.enum';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class PermissionSyncService implements OnApplicationBootstrap {
   private readonly logger = new Logger(PermissionSyncService.name);
+  private permissionRepo: Repository<Permission>;
 
   constructor(
     @InjectRepository(Permission)
-    private readonly permissionRepo: Repository<Permission>,
-  ) {}
+    permissionRepoBase: Repository<Permission>,
+  ) {
+    this.permissionRepo = wrapTenantRepository(permissionRepoBase);
+  }
 
   async onApplicationBootstrap() {
     this.logger.log('Synchronizing permissions...');

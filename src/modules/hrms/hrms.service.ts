@@ -6,16 +6,23 @@ import {
   EmploymentContract,
   ContractStatus,
 } from './entities/employment-contract.entity';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class HrmsService {
+  private empRepo: Repository<Employee>;
+  private contractRepo: Repository<EmploymentContract>;
+
   constructor(
     @InjectRepository(Employee)
-    private empRepo: Repository<Employee>,
+    empRepoBase: Repository<Employee>,
     @InjectRepository(EmploymentContract)
-    private contractRepo: Repository<EmploymentContract>,
+    contractRepoBase: Repository<EmploymentContract>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.empRepo = wrapTenantRepository(empRepoBase);
+    this.contractRepo = wrapTenantRepository(contractRepoBase);
+  }
 
   async createEmployee(data: Partial<Employee>): Promise<Employee> {
     const emp = this.empRepo.create({

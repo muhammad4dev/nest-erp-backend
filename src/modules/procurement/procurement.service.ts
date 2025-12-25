@@ -11,16 +11,23 @@ import {
 } from './entities/purchase-order.entity';
 import { VendorBill, VendorBillStatus } from './entities/vendor-bill.entity';
 import { APAgingQueryDto, APAgingEntry } from './dto/account-payable.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class ProcurementService {
+  private poRepo: Repository<PurchaseOrder>;
+  private billRepo: Repository<VendorBill>;
+
   constructor(
     @InjectRepository(PurchaseOrder)
-    private poRepo: Repository<PurchaseOrder>,
+    poRepoBase: Repository<PurchaseOrder>,
     @InjectRepository(VendorBill)
-    private billRepo: Repository<VendorBill>,
+    billRepoBase: Repository<VendorBill>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    this.poRepo = wrapTenantRepository(poRepoBase);
+    this.billRepo = wrapTenantRepository(billRepoBase);
+  }
 
   async createRFQ(data: Partial<PurchaseOrder>): Promise<PurchaseOrder> {
     const rfq = this.poRepo.create({

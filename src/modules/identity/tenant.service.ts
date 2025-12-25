@@ -7,13 +7,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tenant } from './entities/tenant.entity';
 import { CreateTenantDto, UpdateTenantDto } from './dto/tenant.dto';
+import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 
 @Injectable()
 export class TenantService {
+  private tenantRepo: Repository<Tenant>;
+
   constructor(
     @InjectRepository(Tenant)
-    private tenantRepo: Repository<Tenant>,
-  ) {}
+    tenantRepoBase: Repository<Tenant>,
+  ) {
+    this.tenantRepo = wrapTenantRepository(tenantRepoBase);
+  }
 
   async create(dto: CreateTenantDto): Promise<Tenant> {
     const existing = await this.tenantRepo.findOne({
