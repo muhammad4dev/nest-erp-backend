@@ -3,12 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-import { patchTypeORMRepository } from './common/patches/typeorm-repository.patch';
-
 async function bootstrap() {
-  // Patch TypeORM Repositories to be Tenant-Aware globally
-  patchTypeORMRepository();
-
   const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -41,8 +36,34 @@ async function bootstrap() {
       'tenant-id',
     )
     .addSecurityRequirements('tenant-id')
+    .addSecurityRequirements('bearer')
     .build();
   const document = SwaggerModule.createDocument(app, config);
+
+  const isOperationObject = (
+    value: unknown,
+  ): value is { security?: Array<Record<string, string[]>> } =>
+    typeof value === 'object' &&
+    value !== null &&
+    'responses' in (value as Record<string, unknown>);
+
+  // Ensure every operation requires the tenant header, even if controller-level security overrides top-level
+  for (const path of Object.values(document.paths ?? {})) {
+    for (const method of Object.values(path ?? {})) {
+      if (!isOperationObject(method)) continue;
+
+      const security = Array.isArray(method.security)
+        ? [...method.security]
+        : [];
+      if (!security.some((s) => 'tenant-id' in s)) {
+        security.push({ 'tenant-id': [] });
+      }
+      if (!security.some((s) => 'bearer' in s)) {
+        security.push({ bearer: [] });
+      }
+      method.security = security;
+    }
+  }
 
   // Expose OpenAPI JSON at /api-json and YAML at /api-yaml
   SwaggerModule.setup('api', app, document, {
@@ -53,6 +74,22 @@ async function bootstrap() {
       docExpansion: 'none',
       filter: true,
       showRequestDuration: true,
+      // Optional: if security overrides miss the header, enforce it via request interceptor
+      requestInterceptor: (rawReq: unknown) => {
+        const req = (rawReq ?? {}) as {
+          headers?: Record<string, string>;
+          tenantId?: string;
+        };
+
+        req.headers = req.headers ?? {};
+        // Keep whatever user set; do not overwrite.
+        req.headers['x-tenant-id'] =
+          req.headers['x-tenant-id'] ??
+          req.tenantId ??
+          req.headers['X-TENANT-ID'];
+
+        return req;
+      },
     },
   });
 

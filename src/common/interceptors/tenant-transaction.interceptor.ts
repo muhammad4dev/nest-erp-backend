@@ -7,11 +7,19 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { type Observable, from, lastValueFrom } from 'rxjs';
 import { DataSource, EntityManager, QueryRunner } from 'typeorm';
+import { Request } from 'express';
 import { TenantContext } from '../context/tenant.context';
 
 interface TransactionContext {
   queryRunner: QueryRunner;
   manager: EntityManager;
+}
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    tenantId?: string;
+    userId?: string;
+  };
 }
 
 /**
@@ -34,16 +42,36 @@ export class TenantTransactionInterceptor implements NestInterceptor {
     next: CallHandler<unknown>,
   ): Observable<unknown> {
     const tenantId = TenantContext.getTenantId();
+    const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const headerTenant = req.headers?.['x-tenant-id'];
+    const tokenTenant = req.user?.tenantId;
+    const userId = req.user?.userId;
+
+    // If authenticated, enforce that header tenant matches token tenant to avoid confusing RLS 404s
+    if (
+      tokenTenant &&
+      typeof headerTenant === 'string' &&
+      headerTenant !== tokenTenant
+    ) {
+      throw new Error(
+        'Unauthorized: tenant mismatch between token and x-tenant-id header',
+      );
+    }
+
+    // Record userId in context if available (for audit triggers)
+    if (userId) {
+      TenantContext.setUserId(userId);
+    }
 
     // If no tenant context, skip transaction (for public routes like health check)
     if (!tenantId) {
       return next.handle();
     }
 
-    const userId = TenantContext.getUserId();
+    const userIdFromContext = TenantContext.getUserId();
 
     // Wrap the transaction logic in a Promise-based flow
-    return from(this.executeWithTransaction(tenantId, userId, next));
+    return from(this.executeWithTransaction(tenantId, userIdFromContext, next));
   }
 
   private async executeWithTransaction(
@@ -76,16 +104,29 @@ export class TenantTransactionInterceptor implements NestInterceptor {
     userId?: string,
   ): Promise<TransactionContext> {
     const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
 
-    // Set tenant context for RLS
-    await queryRunner.query(`SET LOCAL app.current_tenant_id = '${tenantId}'`);
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
 
-    if (userId) {
-      await queryRunner.query(`SET LOCAL app.current_user_id = '${userId}'`);
+      // Set tenant context for RLS using set_config (allows parameterization)
+      // SET LOCAL does not support bind parameters; set_config does and is scoped to the transaction when `is_local=true`.
+      await queryRunner.query(
+        "SELECT set_config('app.current_tenant_id', $1, true)",
+        [tenantId],
+      );
+
+      if (userId) {
+        await queryRunner.query(
+          "SELECT set_config('app.current_user_id', $1, true)",
+          [userId],
+        );
+      }
+
+      return { queryRunner, manager: queryRunner.manager };
+    } catch (error) {
+      await queryRunner.release();
+      throw error;
     }
-
-    return { queryRunner, manager: queryRunner.manager };
   }
 }

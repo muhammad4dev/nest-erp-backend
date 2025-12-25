@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { EntityManager } from 'typeorm';
+import { UnauthorizedException } from '@nestjs/common';
 
 export interface TenantStore {
   tenantId: string;
@@ -26,6 +27,20 @@ export class TenantContext {
     return this.storage.getStore()?.tenantId;
   }
 
+  /**
+   * Get tenant ID or throw if not available.
+   * Use this when tenant context is required.
+   */
+  static requireTenantId(): string {
+    const tenantId = this.getTenantId();
+    if (!tenantId) {
+      throw new UnauthorizedException(
+        'Tenant context is required for this operation',
+      );
+    }
+    return tenantId;
+  }
+
   static getUserId(): string | undefined {
     return this.storage.getStore()?.userId;
   }
@@ -47,5 +62,29 @@ export class TenantContext {
     if (store) {
       store.entityManager = manager;
     }
+  }
+
+  /**
+   * Set the current user id in the tenant context after authentication.
+   */
+  static setUserId(userId: string): void {
+    const store = this.storage.getStore();
+    if (store) {
+      store.userId = userId;
+    }
+  }
+
+  /**
+   * Check if we're currently in a tenant context.
+   */
+  static isActive(): boolean {
+    return !!this.storage.getStore();
+  }
+
+  /**
+   * Check if we're in a transaction context.
+   */
+  static hasTransaction(): boolean {
+    return !!this.getEntityManager();
   }
 }
