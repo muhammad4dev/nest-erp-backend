@@ -7,6 +7,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
+import { Idempotent } from '../../common/decorators/idempotent.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -35,6 +36,7 @@ export class ProcurementController {
   ) {}
 
   @Post('rfq')
+  @Idempotent()
   @ApiOperation({ summary: 'Create a Request for Quotation (RFQ)' })
   @ApiResponse({
     status: 201,

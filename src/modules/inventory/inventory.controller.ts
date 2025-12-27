@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Idempotent } from '../../common/decorators/idempotent.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -41,6 +42,7 @@ export class InventoryController {
   // ========== PRODUCTS ==========
 
   @Post('products')
+  @Idempotent()
   @ApiOperation({ summary: 'Create a new product' })
   @ApiResponse({
     status: 201,

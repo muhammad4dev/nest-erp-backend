@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Idempotent } from '../../common/decorators/idempotent.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -63,6 +64,7 @@ export class FinanceController {
   // ========== JOURNAL ENTRIES ==========
 
   @Post('journal-entries')
+  @Idempotent()
   @ApiOperation({ summary: 'Create a new journal entry' })
   @ApiResponse({
     status: 201,
@@ -100,6 +102,7 @@ export class FinanceController {
   // ========== FISCAL PERIODS ==========
 
   @Post('periods')
+  @Idempotent()
   @ApiOperation({ summary: 'Create a new fiscal period' })
   @ApiResponse({
     status: 201,
