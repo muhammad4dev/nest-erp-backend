@@ -307,13 +307,14 @@ export class FinanceController {
   }
 
   @Post('payment-terms')
+  @Idempotent()
+  @RequirePermissions(PERMISSIONS.ACCOUNTS.CREATE)
   @ApiOperation({ summary: 'Create a payment term' })
   @ApiResponse({
     status: 201,
     description: 'Payment term created.',
     type: PaymentTerm,
   })
-  @RequirePermissions(PERMISSIONS.ACCOUNTS.CREATE)
   createPaymentTerm(@Body() dto: CreatePaymentTermDto) {
     return this.financeService.createPaymentTerm(dto);
   }

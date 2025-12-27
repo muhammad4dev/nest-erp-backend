@@ -5,6 +5,7 @@ import { JournalEntryService } from './journal-entry.service';
 import { CreateJournalLineDto } from './dto/create-journal-entry.dto';
 import { JournalEntry } from './entities/journal-entry.entity';
 import { JournalLine } from './entities/journal-line.entity';
+import { TenantContext } from '../../common/context/tenant.context';
 import {
   TrialBalanceQueryDto,
   TrialBalanceEntry,
@@ -59,7 +60,11 @@ export class FinanceService {
   // ========== PAYMENT TERMS ==========
 
   async createPaymentTerm(dto: CreatePaymentTermDto): Promise<PaymentTerm> {
-    const term = this.paymentTermRepo.create(dto);
+    const tenantId = TenantContext.getTenantId();
+    const term = this.paymentTermRepo.create({
+      ...dto,
+      tenantId,
+    });
     return this.paymentTermRepo.save(term);
   }
 
