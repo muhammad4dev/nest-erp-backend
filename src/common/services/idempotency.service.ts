@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { IdempotencyLog } from '../entities/idempotency-log.entity';
 import { TenantContext } from '../context/tenant.context';
+import { wrapTenantRepository } from '../repositories/tenant-repository-wrapper';
 
 export interface IdempotencyPayload {
   endpoint: string;
@@ -15,11 +16,14 @@ export interface IdempotencyPayload {
 @Injectable()
 export class IdempotencyService {
   private readonly EXPIRY_HOURS = 24;
+  private repo: Repository<IdempotencyLog>;
 
   constructor(
     @InjectRepository(IdempotencyLog)
-    private repo: Repository<IdempotencyLog>,
-  ) {}
+    repoBase: Repository<IdempotencyLog>,
+  ) {
+    this.repo = wrapTenantRepository(repoBase);
+  }
 
   async checkAndStore(
     idempotencyKey: string,
