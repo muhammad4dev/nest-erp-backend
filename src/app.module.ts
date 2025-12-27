@@ -16,11 +16,15 @@ import { I18nModule } from './modules/i18n/i18n.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { TenantTransactionInterceptor } from './common/interceptors/tenant-transaction.interceptor';
+import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
+import { IdempotencyService } from './common/services/idempotency.service';
+import { IdempotencyLog } from './common/entities/idempotency-log.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forFeature([IdempotencyLog]),
     AuthModule,
     IdentityModule,
     FinanceModule,
@@ -34,9 +38,14 @@ import { TenantTransactionInterceptor } from './common/interceptors/tenant-trans
   ],
   controllers: [AppController],
   providers: [
+    IdempotencyService,
     {
       provide: APP_INTERCEPTOR,
       useClass: TenantTransactionInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdempotencyInterceptor,
     },
   ],
 })
