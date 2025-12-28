@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Account, AccountType } from './entities/account.entity';
 import { CreateAccountDto, UpdateAccountDto } from './dto/account.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class AccountService {
@@ -21,6 +22,7 @@ export class AccountService {
   }
 
   async create(dto: CreateAccountDto): Promise<Account> {
+    const tenantId = TenantContext.requireTenantId();
     const existing = await this.accountRepository.findOne({
       where: { code: dto.code },
     });
@@ -29,7 +31,7 @@ export class AccountService {
       throw new ConflictException('Account code already exists');
     }
 
-    const account = this.accountRepository.create(dto);
+    const account = this.accountRepository.create({ ...dto, tenantId });
     return this.accountRepository.save(account);
   }
 

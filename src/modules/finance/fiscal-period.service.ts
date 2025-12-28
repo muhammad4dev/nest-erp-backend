@@ -12,6 +12,7 @@ import {
   UpdateFiscalPeriodDto,
 } from './dto/fiscal-period.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class FiscalPeriodService {
@@ -29,6 +30,7 @@ export class FiscalPeriodService {
   }
 
   async create(dto: CreateFiscalPeriodDto): Promise<FiscalPeriod> {
+    const tenantId = TenantContext.requireTenantId();
     // Check for overlapping periods
     const overlapping = await this.periodRepository
       .createQueryBuilder('p')
@@ -44,7 +46,7 @@ export class FiscalPeriodService {
       );
     }
 
-    const period = this.periodRepository.create(dto);
+    const period = this.periodRepository.create({ ...dto, tenantId });
     return this.periodRepository.save(period);
   }
 

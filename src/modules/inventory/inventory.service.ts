@@ -20,6 +20,7 @@ import {
   StockValuationEntry,
 } from './dto/inventory-reports.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class InventoryService {
@@ -48,6 +49,7 @@ export class InventoryService {
   // ========== PRODUCT CRUD ==========
 
   async createProduct(dto: CreateProductDto): Promise<Product> {
+    const tenantId = TenantContext.requireTenantId();
     const existing = await this.productRepository.findOne({
       where: { sku: dto.sku },
     });
@@ -55,7 +57,7 @@ export class InventoryService {
       throw new ConflictException('Product with this SKU already exists');
     }
 
-    const product = this.productRepository.create(dto);
+    const product = this.productRepository.create({ ...dto, tenantId });
     return this.productRepository.save(product);
   }
 
@@ -96,7 +98,8 @@ export class InventoryService {
   // ========== LOCATION CRUD ==========
 
   async createLocation(dto: CreateLocationDto): Promise<Location> {
-    const location = this.locationRepository.create(dto);
+    const tenantId = TenantContext.requireTenantId();
+    const location = this.locationRepository.create({ ...dto, tenantId });
     return this.locationRepository.save(location);
   }
 
@@ -163,6 +166,7 @@ export class InventoryService {
   async transferStock(
     dto: StockTransferDto,
   ): Promise<{ success: boolean; message: string }> {
+    const tenantId = TenantContext.requireTenantId();
     if (dto.fromLocationId === dto.toLocationId) {
       throw new BadRequestException(
         'Source and destination locations must be different',
@@ -198,6 +202,7 @@ export class InventoryService {
           productId: dto.productId,
           locationId: dto.toLocationId,
           quantity: dto.quantity,
+          tenantId,
         });
         await quantRepo.save(destQuant);
       }
@@ -226,10 +231,12 @@ export class InventoryService {
           'Cannot adjust non-existent stock to negative',
         );
       }
+      const tenantId = TenantContext.requireTenantId();
       quant = this.quantRepository.create({
         productId: dto.productId,
         locationId: dto.locationId,
         quantity: dto.quantity,
+        tenantId,
       });
     }
 

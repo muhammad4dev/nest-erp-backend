@@ -12,6 +12,7 @@ import {
   UpdateProductVariantDto,
 } from './dto/product-variant.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class ProductVariantService {
@@ -29,6 +30,7 @@ export class ProductVariantService {
   }
 
   async create(dto: CreateProductVariantDto): Promise<ProductVariant> {
+    const tenantId = TenantContext.requireTenantId();
     // Verify parent product exists
     const product = await this.productRepo.findOne({
       where: { id: dto.parentProductId },
@@ -47,7 +49,7 @@ export class ProductVariantService {
       throw new ConflictException('Variant SKU already exists');
     }
 
-    const variant = this.variantRepo.create(dto);
+    const variant = this.variantRepo.create({ ...dto, tenantId });
     const savedVariant = await this.variantRepo.save(variant);
 
     // Mark parent as having variants
@@ -135,6 +137,8 @@ export class ProductVariantService {
         .map((v) => v.toUpperCase().substring(0, 3))
         .join('-');
 
+      const tenantId = TenantContext.requireTenantId();
+
       const variant = this.variantRepo.create({
         parentProductId: productId,
         sku: `${product.sku}-${skuSuffix}`,
@@ -142,6 +146,7 @@ export class ProductVariantService {
         variantAttributes: attrs,
         salesPrice: product.salesPrice,
         costPrice: product.costPrice,
+        tenantId,
       });
 
       variants.push(await this.variantRepo.save(variant));

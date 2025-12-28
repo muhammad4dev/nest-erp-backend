@@ -5,6 +5,7 @@ import { Partner } from './entities/partner.entity';
 import { CreatePartnerDto } from './dto/create-partner.dto';
 import { UpdatePartnerDto } from './dto/update-partner.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class PartnerService {
@@ -18,7 +19,8 @@ export class PartnerService {
   }
 
   async create(dto: CreatePartnerDto): Promise<Partner> {
-    const partner = this.partnerRepo.create(dto);
+    const tenantId = TenantContext.requireTenantId();
+    const partner = this.partnerRepo.create({ ...dto, tenantId });
     return this.partnerRepo.save(partner);
   }
 

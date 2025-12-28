@@ -11,6 +11,7 @@ import {
   UpdateProductCategoryDto,
 } from './dto/product-category.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class ProductCategoryService {
@@ -32,7 +33,8 @@ export class ProductCategoryService {
       throw new ConflictException('Category code already exists');
     }
 
-    const category = this.categoryRepo.create(dto);
+    const tenantId = TenantContext.requireTenantId();
+    const category = this.categoryRepo.create({ ...dto, tenantId });
     return this.categoryRepo.save(category);
   }
 

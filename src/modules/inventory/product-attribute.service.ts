@@ -11,6 +11,7 @@ import {
   UpdateProductAttributeDto,
 } from './dto/product-attribute.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class ProductAttributeService {
@@ -32,7 +33,8 @@ export class ProductAttributeService {
       throw new ConflictException('Attribute code already exists');
     }
 
-    const attribute = this.attributeRepo.create(dto);
+    const tenantId = TenantContext.requireTenantId();
+    const attribute = this.attributeRepo.create({ ...dto, tenantId });
     return this.attributeRepo.save(attribute);
   }
 
