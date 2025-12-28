@@ -71,8 +71,11 @@ export class PermissionsGuard implements CanActivate {
       )) as User;
 
       const userRoles = fullUser.roles || [];
+      // Map permissions to the canonical "action:resource" format
       const userPermissions = userRoles.flatMap((role) =>
-        role.permissions ? role.permissions.map((p) => p.action) : [],
+        role.permissions
+          ? role.permissions.map((p) => `${p.action}:${p.resource}`)
+          : [],
       );
 
       const hasPermission = requiredPermissions.some((permission) =>
