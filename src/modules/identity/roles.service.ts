@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Role, Permission } from './entities/role.entity';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class RolesService {
@@ -22,22 +27,13 @@ export class RolesService {
   }
 
   async create(dto: CreateRoleDto): Promise<Role> {
+    const tenantId = TenantContext.requireTenantId();
+
     const role = this.roleRepo.create({
       name: dto.name,
       description: dto.description,
+      tenantId,
     });
-
-    if (dto.permissions && dto.permissions.length > 0) {
-      // Find permissions by ID or Name (assuming ID for now, but name is often better for DTOs if IDs are UUIDs)
-      // Implementation plan suggested permissions: string[]
-      // We'll support binding by Permission Action (e.g. 'create:invoice') if passed as strings?
-      // Or IDs. Let's assume IDs for strict relational mapping, but for a good UX, names are easier.
-      // Let's assume these are Permission IDs for now as per standard relational linking.
-      const permissions = await this.permissionRepo.findBy({
-        action: In(dto.permissions), // Assuming we pass actions like 'create:invoice' for easier mapping
-      });
-      role.permissions = permissions;
-    }
 
     return this.roleRepo.save(role);
   }
@@ -58,14 +54,7 @@ export class RolesService {
   async update(id: string, dto: UpdateRoleDto): Promise<Role> {
     const role = await this.findOne(id);
     if (dto.name) role.name = dto.name;
-    if (dto.description) role.description = dto.description;
-
-    if (dto.permissions) {
-      const permissions = await this.permissionRepo.findBy({
-        action: In(dto.permissions),
-      });
-      role.permissions = permissions;
-    }
+    if (dto.description !== undefined) role.description = dto.description;
 
     return this.roleRepo.save(role);
   }
@@ -81,12 +70,20 @@ export class RolesService {
 
   async assignPermissions(
     roleId: string,
-    permissionActions: string[],
+    permissionIds: string[],
   ): Promise<Role> {
     const role = await this.findOne(roleId);
-    const permissions = await this.permissionRepo.findBy({
-      action: In(permissionActions),
-    });
+
+    // Find permissions by IDs
+    const permissions = await this.permissionRepo.findByIds(permissionIds);
+
+    // Validate all permissions were found
+    if (permissions.length !== permissionIds.length) {
+      throw new BadRequestException(
+        `Some permissions not found. Expected ${permissionIds.length}, found ${permissions.length}`,
+      );
+    }
+
     role.permissions = permissions;
     return this.roleRepo.save(role);
   }

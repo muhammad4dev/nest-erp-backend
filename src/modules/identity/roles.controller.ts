@@ -11,11 +11,13 @@ import {
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiBody,
 } from '@nestjs/swagger';
 import { Role, Permission } from './entities/role.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -50,7 +52,7 @@ export class RolesController {
   @ApiOperation({ summary: 'List all available system permissions' })
   @ApiResponse({
     status: 200,
-    description: 'List of permissions.',
+    description: 'List of all system permissions with metadata.',
     type: [Permission],
   })
   @RequirePermissions(PERMISSIONS.ROLES.READ)
@@ -87,16 +89,25 @@ export class RolesController {
 
   @Post(':id/permissions')
   @ApiOperation({ summary: 'Assign permissions to a role' })
+  @ApiBody({ type: AssignPermissionsDto })
   @ApiResponse({
     status: 200,
     description: 'Permissions assigned.',
     type: Role,
   })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid permission IDs provided.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Role not found.',
+  })
   @RequirePermissions(PERMISSIONS.ROLES.UPDATE)
   assignPermissions(
     @Param('id') id: string,
-    @Body('permissions') permissions: string[],
+    @Body() dto: AssignPermissionsDto,
   ) {
-    return this.rolesService.assignPermissions(id, permissions);
+    return this.rolesService.assignPermissions(id, dto.permissionIds);
   }
 }
