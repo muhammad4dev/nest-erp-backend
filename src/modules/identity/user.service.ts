@@ -12,6 +12,7 @@ import {
   CreateUserDto,
   UpdateUserDto,
   ChangePasswordDto,
+  UserListFiltersDto,
 } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 import { hashPassword } from '../../common/security/password.util';
@@ -58,10 +59,28 @@ export class UserService {
     return result as User;
   }
 
-  async findAll(): Promise<Partial<User>[]> {
-    const users = await this.userRepo.find({
-      relations: ['roles'],
-    });
+  async findAll(filters?: UserListFiltersDto): Promise<Partial<User>[]> {
+    const query = this.userRepo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.roles', 'roles');
+
+    if (filters?.search) {
+      query.andWhere('user.email ILIKE :search', {
+        search: `%${filters.search}%`,
+      });
+    }
+
+    if (filters?.isActive !== undefined) {
+      query.andWhere('user.isActive = :isActive', {
+        isActive: filters.isActive,
+      });
+    }
+
+    if (filters?.role) {
+      query.andWhere('roles.name = :role', { role: filters.role });
+    }
+
+    const users = await query.getMany();
 
     return users.map((user) => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

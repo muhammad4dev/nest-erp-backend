@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsUUID,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -58,4 +59,22 @@ export class ChangePasswordDto {
   @IsString()
   @MinLength(8)
   newPassword: string;
+}
+
+export class UserListFiltersDto {
+  @ApiPropertyOptional({ description: 'Filter by role name' })
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @ApiPropertyOptional({ description: 'Search by email' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by active status' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  isActive?: boolean;
 }
