@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -47,7 +54,10 @@ export class HrmsController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Employee not found.' })
   @RequirePermissions(PERMISSIONS.CONTRACTS.CREATE)
-  addContract(@Param('id') employeeId: string, @Body() dto: CreateContractDto) {
+  addContract(
+    @Param('id', new ParseUUIDPipe()) employeeId: string,
+    @Body() dto: CreateContractDto,
+  ) {
     return this.hrmsService.addContract(employeeId, dto);
   }
 
@@ -65,7 +75,7 @@ export class HrmsController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Contract not found.' })
   @RequirePermissions(PERMISSIONS.CONTRACTS.UPDATE)
-  activateContract(@Param('id') id: string) {
+  activateContract(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.hrmsService.activateContract(id);
   }
 }

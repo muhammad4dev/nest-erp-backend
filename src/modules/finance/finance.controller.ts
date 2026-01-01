@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Idempotent } from '../../common/decorators/idempotent.decorator';
 import {
@@ -95,7 +96,7 @@ export class FinanceController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @RequirePermissions(PERMISSIONS.JOURNALS.APPROVE)
-  postEntry(@Param('id') id: string) {
+  postEntry(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.journalEntryService.post(id);
   }
 
@@ -155,7 +156,7 @@ export class FinanceController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Period not found.' })
   @RequirePermissions(PERMISSIONS.FISCAL_PERIODS.READ)
-  findPeriod(@Param('id') id: string) {
+  findPeriod(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.fiscalPeriodService.findOne(id);
   }
 
@@ -172,7 +173,10 @@ export class FinanceController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @RequirePermissions(PERMISSIONS.FISCAL_PERIODS.UPDATE)
-  updatePeriod(@Param('id') id: string, @Body() dto: UpdateFiscalPeriodDto) {
+  updatePeriod(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateFiscalPeriodDto,
+  ) {
     return this.fiscalPeriodService.update(id, dto);
   }
 
@@ -189,7 +193,10 @@ export class FinanceController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @RequirePermissions(PERMISSIONS.FISCAL_PERIODS.UPDATE)
-  closePeriod(@Param('id') id: string, @Body() dto: ClosePeriodDto) {
+  closePeriod(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ClosePeriodDto,
+  ) {
     return this.fiscalPeriodService.closePeriod(id, dto.force);
   }
 
@@ -203,7 +210,7 @@ export class FinanceController {
   @ApiResponse({ status: 400, description: 'Period is not closed.' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @RequirePermissions(PERMISSIONS.FISCAL_PERIODS.UPDATE)
-  reopenPeriod(@Param('id') id: string) {
+  reopenPeriod(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.fiscalPeriodService.reopenPeriod(id);
   }
 
@@ -244,7 +251,7 @@ export class FinanceController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Account not found.' })
   @RequirePermissions(PERMISSIONS.ACCOUNTS.READ)
-  findAccount(@Param('id') id: string) {
+  findAccount(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.accountService.findOne(id);
   }
 
@@ -260,7 +267,10 @@ export class FinanceController {
   @ApiResponse({ status: 404, description: 'Account not found.' })
   @ApiResponse({ status: 409, description: 'Account code already exists.' })
   @RequirePermissions(PERMISSIONS.ACCOUNTS.UPDATE)
-  updateAccount(@Param('id') id: string, @Body() dto: UpdateAccountDto) {
+  updateAccount(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateAccountDto,
+  ) {
     return this.accountService.update(id, dto);
   }
 
@@ -328,7 +338,7 @@ export class FinanceController {
   })
   @RequirePermissions(PERMISSIONS.ACCOUNTS.UPDATE)
   updatePaymentTerm(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdatePaymentTermDto,
   ) {
     return this.financeService.updatePaymentTerm(id, dto);
@@ -342,7 +352,7 @@ export class FinanceController {
   })
   @ApiResponse({ status: 404, description: 'Payment term not found.' })
   @RequirePermissions(PERMISSIONS.ACCOUNTS.DELETE)
-  deletePaymentTerm(@Param('id') id: string) {
+  deletePaymentTerm(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.financeService.deletePaymentTerm(id);
   }
 }

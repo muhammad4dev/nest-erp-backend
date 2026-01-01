@@ -1,4 +1,10 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -34,7 +40,9 @@ export class ComplianceController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.COMPLIANCE.READ_REPORT)
-  async generateEInvoice(@Param('orderId') orderId: string) {
+  async generateEInvoice(
+    @Param('orderId', new ParseUUIDPipe()) orderId: string,
+  ) {
     const order = await this.salesOrderRepo.findOne({
       where: { id: orderId },
       relations: ['partner', 'lines', 'lines.product', 'lines.product.uom'],

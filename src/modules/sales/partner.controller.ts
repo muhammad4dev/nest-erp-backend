@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -79,7 +80,7 @@ export class PartnerController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Partner not found.' })
   @RequirePermissions(PERMISSIONS.PARTNERS.READ)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.partnerService.findOne(id);
   }
 
@@ -94,7 +95,10 @@ export class PartnerController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Partner not found.' })
   @RequirePermissions(PERMISSIONS.PARTNERS.UPDATE)
-  update(@Param('id') id: string, @Body() dto: UpdatePartnerDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdatePartnerDto,
+  ) {
     return this.partnerService.update(id, dto);
   }
 
@@ -104,7 +108,7 @@ export class PartnerController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Partner not found.' })
   @RequirePermissions(PERMISSIONS.PARTNERS.DELETE)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.partnerService.remove(id);
   }
 }

@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { Idempotent } from '../../common/decorators/idempotent.decorator';
 import {
@@ -83,7 +84,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.SALES_ORDERS.READ)
-  findOrder(@Param('id') id: string) {
+  findOrder(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.salesService.findOne(id);
   }
 
@@ -101,7 +102,10 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.SALES_ORDERS.UPDATE)
-  updateOrder(@Param('id') id: string, @Body() dto: UpdateSalesOrderDto) {
+  updateOrder(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateSalesOrderDto,
+  ) {
     return this.salesService.update(id, dto);
   }
 
@@ -116,7 +120,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.SALES_ORDERS.UPDATE)
-  sendQuote(@Param('id') id: string) {
+  sendQuote(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.salesService.sendQuote(id);
   }
 
@@ -134,7 +138,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.SALES_ORDERS.UPDATE)
-  confirmOrder(@Param('id') id: string) {
+  confirmOrder(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.salesService.confirmOrder(id);
   }
 
@@ -149,7 +153,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.SALES_ORDERS.CANCEL)
-  cancelOrder(@Param('id') id: string) {
+  cancelOrder(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.salesService.cancelOrder(id);
   }
 
@@ -167,7 +171,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @RequirePermissions(PERMISSIONS.INVOICES.CREATE)
-  createInvoice(@Param('id') orderId: string) {
+  createInvoice(@Param('id', new ParseUUIDPipe()) orderId: string) {
     return this.invoiceService.createFromOrder(orderId);
   }
 
@@ -193,7 +197,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Invoice not found.' })
   @RequirePermissions(PERMISSIONS.INVOICES.READ)
-  getInvoice(@Param('id') id: string) {
+  getInvoice(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.invoiceService.findOne(id);
   }
 
@@ -211,7 +215,7 @@ export class SalesController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Invoice not found.' })
   @RequirePermissions(PERMISSIONS.INVOICES.POST)
-  postInvoice(@Param('id') id: string) {
+  postInvoice(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.invoiceService.postInvoice(id);
   }
 

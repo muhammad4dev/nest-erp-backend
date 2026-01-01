@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -101,7 +102,7 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.READ)
-  findCategory(@Param('id') id: string) {
+  findCategory(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.categoryService.findOne(id);
   }
 
@@ -117,7 +118,7 @@ export class ProductController {
   @ApiResponse({ status: 404, description: 'Category not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.UPDATE)
   updateCategory(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateProductCategoryDto,
   ) {
     return this.categoryService.update(id, dto);
@@ -133,7 +134,7 @@ export class ProductController {
     description: 'Cannot delete category with subcategories.',
   })
   @RequirePermissions(PERMISSIONS.PRODUCTS.DELETE)
-  removeCategory(@Param('id') id: string) {
+  removeCategory(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.categoryService.remove(id);
   }
 
@@ -205,7 +206,7 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Attribute not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.READ)
-  findAttribute(@Param('id') id: string) {
+  findAttribute(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.attributeService.findOne(id);
   }
 
@@ -221,7 +222,7 @@ export class ProductController {
   @ApiResponse({ status: 404, description: 'Attribute not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.UPDATE)
   updateAttribute(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateProductAttributeDto,
   ) {
     return this.attributeService.update(id, dto);
@@ -233,7 +234,7 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Attribute not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.DELETE)
-  removeAttribute(@Param('id') id: string) {
+  removeAttribute(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.attributeService.remove(id);
   }
 
@@ -264,7 +265,9 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.READ)
-  findProductVariants(@Param('productId') productId: string) {
+  findProductVariants(
+    @Param('productId', new ParseUUIDPipe()) productId: string,
+  ) {
     return this.variantService.findByProduct(productId);
   }
 
@@ -278,7 +281,7 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Variant not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.READ)
-  findVariant(@Param('id') id: string) {
+  findVariant(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.variantService.findOne(id);
   }
 
@@ -293,7 +296,10 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Variant not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.UPDATE)
-  updateVariant(@Param('id') id: string, @Body() dto: UpdateProductVariantDto) {
+  updateVariant(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateProductVariantDto,
+  ) {
     return this.variantService.update(id, dto);
   }
 
@@ -303,7 +309,7 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Variant not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.DELETE)
-  removeVariant(@Param('id') id: string) {
+  removeVariant(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.variantService.remove(id);
   }
 
@@ -321,7 +327,7 @@ export class ProductController {
   @ApiResponse({ status: 404, description: 'Product not found.' })
   @RequirePermissions(PERMISSIONS.PRODUCTS.CREATE)
   generateVariants(
-    @Param('productId') productId: string,
+    @Param('productId', new ParseUUIDPipe()) productId: string,
     @Body() combinations: Array<Record<string, string>>,
   ) {
     return this.variantService.generateVariants(productId, combinations);

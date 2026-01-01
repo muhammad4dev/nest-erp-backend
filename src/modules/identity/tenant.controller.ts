@@ -7,6 +7,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -59,7 +60,7 @@ export class TenantController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @RequirePermissions(PERMISSIONS.TENANTS.READ)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.tenantService.findOne(id);
   }
 
@@ -75,7 +76,10 @@ export class TenantController {
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @ApiResponse({ status: 409, description: 'Tenant name already exists.' })
   @RequirePermissions(PERMISSIONS.TENANTS.UPDATE)
-  update(@Param('id') id: string, @Body() dto: UpdateTenantDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateTenantDto,
+  ) {
     return this.tenantService.update(id, dto);
   }
 
@@ -85,7 +89,7 @@ export class TenantController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'Tenant not found.' })
   @RequirePermissions(PERMISSIONS.TENANTS.DELETE)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.tenantService.remove(id);
   }
 }

@@ -8,6 +8,8 @@ import {
   Param,
   Req,
   UseGuards,
+  ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +22,7 @@ import {
   CreateUserDto,
   UpdateUserDto,
   ChangePasswordDto,
+  UserListFiltersDto,
 } from './dto/user.dto';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -66,8 +69,9 @@ export class UserController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @RequirePermissions(PERMISSIONS.USERS.READ)
-  findAll() {
-    return this.userService.findAll();
+  @RequirePermissions(PERMISSIONS.USERS.READ)
+  findAll(@Query() query: UserListFiltersDto) {
+    return this.userService.findAll(query);
   }
 
   @Get(':id')
@@ -76,7 +80,7 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @RequirePermissions(PERMISSIONS.USERS.READ)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.findOne(id);
   }
 
@@ -91,7 +95,10 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @RequirePermissions(PERMISSIONS.USERS.UPDATE)
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateUserDto,
+  ) {
     return this.userService.update(id, dto);
   }
 
@@ -104,7 +111,10 @@ export class UserController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @RequirePermissions(PERMISSIONS.USERS.UPDATE)
-  changePassword(@Param('id') id: string, @Body() dto: ChangePasswordDto) {
+  changePassword(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
     return this.userService.changePassword(id, dto);
   }
 
@@ -114,7 +124,7 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @RequirePermissions(PERMISSIONS.USERS.DELETE)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.userService.remove(id);
   }
 
@@ -124,7 +134,10 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'User or Role not found.' })
   @RequirePermissions(PERMISSIONS.USERS.UPDATE)
-  assignRole(@Param('id') id: string, @Param('roleId') roleId: string) {
+  assignRole(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('roleId', new ParseUUIDPipe()) roleId: string,
+  ) {
     return this.userService.assignRole(id, roleId);
   }
 
@@ -134,7 +147,10 @@ export class UserController {
   @ApiResponse({ status: 403, description: 'Forbidden.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @RequirePermissions(PERMISSIONS.USERS.UPDATE)
-  removeRole(@Param('id') id: string, @Param('roleId') roleId: string) {
+  removeRole(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('roleId', new ParseUUIDPipe()) roleId: string,
+  ) {
     return this.userService.removeRole(id, roleId);
   }
 }

@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
@@ -65,7 +66,7 @@ export class RolesController {
   @ApiResponse({ status: 200, description: 'Role details.', type: Role })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   @RequirePermissions(PERMISSIONS.ROLES.READ)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.rolesService.findOne(id);
   }
 
@@ -74,7 +75,10 @@ export class RolesController {
   @ApiResponse({ status: 200, description: 'Role updated.', type: Role })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   @RequirePermissions(PERMISSIONS.ROLES.UPDATE)
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateRoleDto: UpdateRoleDto,
+  ) {
     return this.rolesService.update(id, updateRoleDto);
   }
 
@@ -83,7 +87,7 @@ export class RolesController {
   @ApiResponse({ status: 200, description: 'Role deleted.' })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   @RequirePermissions(PERMISSIONS.ROLES.DELETE)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.rolesService.remove(id);
   }
 
@@ -105,7 +109,7 @@ export class RolesController {
   })
   @RequirePermissions(PERMISSIONS.ROLES.UPDATE)
   assignPermissions(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: AssignPermissionsDto,
   ) {
     return this.rolesService.assignPermissions(id, dto.permissionIds);
