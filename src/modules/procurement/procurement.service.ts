@@ -4,14 +4,21 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  FindManyOptions,
+  FindOptionsWhere,
+} from 'typeorm';
 import {
   PurchaseOrder,
   PurchaseOrderStatus,
 } from './entities/purchase-order.entity';
 import { VendorBill, VendorBillStatus } from './entities/vendor-bill.entity';
 import { APAgingQueryDto, APAgingEntry } from './dto/account-payable.dto';
+import { PurchaseOrderQueryDto } from './dto/purchase-order-query.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { TenantContext } from '../../common/context/tenant.context';
 
 @Injectable()
 export class ProcurementService {
@@ -30,12 +37,63 @@ export class ProcurementService {
   }
 
   async createRFQ(data: Partial<PurchaseOrder>): Promise<PurchaseOrder> {
+    const tenantId = TenantContext.requireTenantId();
+
+    // Calculate total amount from lines
+    let totalAmount = 0;
+    if (data.lines) {
+      totalAmount = data.lines.reduce(
+        (sum, line) => sum + Number(line.unitPrice) * Number(line.quantity),
+        0,
+      );
+      // Ensure subtotal is set for each line
+      data.lines.forEach((line) => {
+        line.subtotal = Number(line.unitPrice) * Number(line.quantity);
+        line.tenantId = tenantId;
+      });
+    }
+
     const rfq = this.poRepo.create({
       ...data,
+      tenantId,
       status: PurchaseOrderStatus.RFQ,
       orderNumber: `PO-${Date.now()}`, // Sequencer needed
+      totalAmount,
     });
     return this.poRepo.save(rfq);
+  }
+
+  async findAll(query: PurchaseOrderQueryDto): Promise<PurchaseOrder[]> {
+    const where: FindOptionsWhere<PurchaseOrder> = {};
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    if (query.partnerId) {
+      where.partnerId = query.partnerId;
+    }
+
+    const findOptions: FindManyOptions<PurchaseOrder> = {
+      where,
+      relations: ['partner'],
+      order: { createdAt: 'DESC' },
+    };
+
+    return this.poRepo.find(findOptions);
+  }
+
+  async findOne(id: string): Promise<PurchaseOrder> {
+    const po = await this.poRepo.findOne({
+      where: { id },
+      relations: ['partner', 'lines', 'lines.product', 'lines.uom'],
+    });
+
+    if (!po) {
+      throw new NotFoundException('Purchase Order not found');
+    }
+
+    return po;
   }
 
   async confirmOrder(id: string): Promise<PurchaseOrder> {
