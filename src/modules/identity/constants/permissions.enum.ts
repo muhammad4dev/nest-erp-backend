@@ -40,7 +40,10 @@ export const PERMISSIONS = {
     DELETE: 'delete:product',
   },
   STOCK: {
+    CREATE: 'create:stock',
     READ: 'read:stock',
+    UPDATE: 'update:stock',
+    DELETE: 'delete:stock',
     ADJUST: 'adjust:stock',
     TRANSFER: 'transfer:stock',
   },
