@@ -16,6 +16,10 @@ import { Location } from './entities/location.entity';
 import { UomCategory } from './entities/uom-category.entity';
 import { UomUnit } from './entities/uom-unit.entity';
 import { ProductUom } from './entities/product-uom.entity';
+import { StockReceipt } from './entities/stock-receipt.entity';
+import { StockReceiptLine } from './entities/stock-receipt-line.entity';
+import { StockIssue } from './entities/stock-issue.entity';
+import { StockIssueLine } from './entities/stock-issue-line.entity';
 import { AuditLog } from '../../common/entities/audit-log.entity';
 
 @Module({
@@ -31,6 +35,10 @@ import { AuditLog } from '../../common/entities/audit-log.entity';
       UomCategory,
       UomUnit,
       ProductUom,
+      StockReceipt,
+      StockReceiptLine,
+      StockIssue,
+      StockIssueLine,
       AuditLog,
     ]),
   ],
