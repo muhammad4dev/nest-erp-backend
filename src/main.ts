@@ -6,6 +6,22 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Enable CORS for frontend development
+  if (process.env.NODE_ENV !== 'production') {
+    app.enableCors({
+      origin: ['http://localhost:5173', 'http://localhost:3000'],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'x-tenant-id',
+        'X-Tenant-Id',
+        'Idempotency-Key',
+      ],
+    });
+  }
+
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   const config = new DocumentBuilder()
@@ -15,8 +31,12 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addTag('auth', 'Authentication endpoints')
+    .addTag('users', 'User management endpoints')
+    .addTag('roles', 'Role & Permission management endpoints')
+    .addTag('tenants', 'Tenant management endpoints')
     .addTag('finance', 'Finance & Accounting endpoints')
     .addTag('sales', 'Sales & CRM endpoints')
+    .addTag('partners', 'Partners (Customers & Vendors) endpoints')
     .addTag('procurement', 'Procurement endpoints')
     .addTag('inventory', 'Inventory management endpoints')
     .addTag('products', 'Product catalog & customization')
