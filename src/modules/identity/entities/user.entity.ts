@@ -20,6 +20,15 @@ export class User extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  /**
+   * Denormalized permissions cache.
+   * Automatically synced when roles/permissions change.
+   * Format: ["action:resource", ...]
+   */
+  @ApiProperty({ example: ['read:user', 'create:invoice'] })
+  @Column('text', { array: true, default: '{}' })
+  permissions: string[];
+
   @ApiPropertyOptional({ type: () => [Role] })
   @ManyToMany(() => Role)
   @JoinTable({

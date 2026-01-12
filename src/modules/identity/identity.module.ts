@@ -14,6 +14,7 @@ import { RolesController } from './roles.controller';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { SystemAuditLog } from './entities/audit-log.entity';
 import { PermissionSyncService } from './permission-sync.service';
+import { UserPermissionsService } from './user-permissions.service';
 
 @Global()
 @Module({
@@ -35,6 +36,7 @@ import { PermissionSyncService } from './permission-sync.service';
     RolesService,
     PermissionsGuard,
     PermissionSyncService,
+    UserPermissionsService,
   ],
   exports: [
     UserService,
@@ -43,6 +45,7 @@ import { PermissionSyncService } from './permission-sync.service';
     PermissionsGuard,
     TypeOrmModule,
     PermissionSyncService,
+    UserPermissionsService,
   ],
 })
 export class IdentityModule {}

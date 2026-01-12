@@ -153,9 +153,11 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string): Promise<Partial<User>> {
+    // Permissions are now denormalized on the User entity.
+    // We still load roles for display but skip roles.permissions (O(1) vs O(N) joins).
     const user = await this.usersRepository.findOne({
       where: { id: userId },
-      relations: ['roles', 'roles.permissions'],
+      relations: ['roles'],
     });
 
     if (!user) {

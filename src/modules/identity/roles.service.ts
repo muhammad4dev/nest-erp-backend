@@ -10,6 +10,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
 import { TenantContext } from '../../common/context/tenant.context';
+import { UserPermissionsService } from './user-permissions.service';
 
 @Injectable()
 export class RolesService {
@@ -21,6 +22,7 @@ export class RolesService {
     roleRepoBase: Repository<Role>,
     @InjectRepository(Permission)
     permissionRepoBase: Repository<Permission>,
+    private readonly userPermissionsService: UserPermissionsService,
   ) {
     this.roleRepo = wrapTenantRepository(roleRepoBase);
     this.permissionRepo = wrapTenantRepository(permissionRepoBase);
@@ -85,6 +87,11 @@ export class RolesService {
     }
 
     role.permissions = permissions;
-    return this.roleRepo.save(role);
+    const savedRole = await this.roleRepo.save(role);
+
+    // Sync denormalized permissions for all users with this role
+    await this.userPermissionsService.syncRolePermissions(roleId);
+
+    return savedRole;
   }
 }

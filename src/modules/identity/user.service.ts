@@ -17,6 +17,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { hashPassword } from '../../common/security/password.util';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { UserPermissionsService } from './user-permissions.service';
 
 @Injectable()
 export class UserService {
@@ -28,6 +29,7 @@ export class UserService {
     userRepoBase: Repository<User>,
     @InjectRepository(Role)
     roleRepoBase: Repository<Role>,
+    private readonly userPermissionsService: UserPermissionsService,
   ) {
     this.userRepo = wrapTenantRepository(userRepoBase);
     this.roleRepo = wrapTenantRepository(roleRepoBase);
@@ -179,6 +181,8 @@ export class UserService {
     if (!alreadyHasRole) {
       user.roles.push(role);
       await this.userRepo.save(user);
+      // Sync denormalized permissions
+      await this.userPermissionsService.syncUserPermissions(userId);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -198,6 +202,8 @@ export class UserService {
 
     user.roles = user.roles.filter((r) => r.id !== roleId);
     await this.userRepo.save(user);
+    // Sync denormalized permissions
+    await this.userPermissionsService.syncUserPermissions(userId);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, ...result } = user;

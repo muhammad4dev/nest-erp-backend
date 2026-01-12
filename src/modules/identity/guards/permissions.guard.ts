@@ -10,7 +10,6 @@ import { UserService } from '../user.service';
 import { User } from '../entities/user.entity';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { TenantContext } from '../../../common/context/tenant.context';
 
 interface RequestWithUser extends Request {
   user: {
@@ -46,14 +45,17 @@ export class PermissionsGuard implements CanActivate {
 
     const headerTenant = request.headers?.['x-tenant-id'] as string | undefined;
     const tokenTenant = user.tenantId;
+
     if (tokenTenant && headerTenant && tokenTenant !== headerTenant) {
       return false;
     }
 
     const qr = this.dataSource.createQueryRunner();
     await qr.connect();
-    await qr.startTransaction();
+
     try {
+      // Step 1: Set RLS context FIRST so we can see the data
+      await qr.startTransaction();
       await qr.query("SELECT set_config('app.current_tenant_id', $1, true)", [
         tokenTenant ?? headerTenant,
       ]);
@@ -61,35 +63,38 @@ export class PermissionsGuard implements CanActivate {
         user.userId,
       ]);
 
-      const fullUser = (await TenantContext.run(
-        {
-          tenantId: tokenTenant ?? headerTenant ?? '',
-          userId: user.userId,
-          entityManager: qr.manager,
-        },
-        async () => this.userService.findOne(user.userId),
-      )) as User;
+      // Step 2: Fetch user permissions using the configured RLS context
+      // MUST use qr.manager to use the same connection where we set the config!
+      const fullUser = await qr.manager.getRepository(User).findOne({
+        where: { id: user.userId },
+        select: ['id', 'permissions', 'tenantId'],
+      });
 
-      const userRoles = fullUser.roles || [];
-      // Map permissions to the canonical "action:resource" format
-      const userPermissions = userRoles.flatMap((role) =>
-        role.permissions
-          ? role.permissions.map((p) => `${p.action}:${p.resource}`)
-          : [],
-      );
+      if (!fullUser) {
+        console.warn(`[PermissionsGuard] User ${user.userId} not found in DB`);
+        await qr.rollbackTransaction(); // Rollback if user not found since we started tx
+        return false;
+      }
+
+      const userPermissions = fullUser.permissions || [];
 
       const hasPermission = requiredPermissions.some((permission) =>
         userPermissions.includes(permission),
       );
 
       if (!hasPermission) {
+        console.warn(
+          `Permission Denied for user ${user.userId}. Missing one of: ${requiredPermissions.join(', ')}`,
+        );
         throw new ForbiddenException('Insufficient permissions');
       }
 
       await qr.commitTransaction();
       return true;
     } catch (e) {
-      await qr.rollbackTransaction();
+      if (qr.isTransactionActive) {
+        await qr.rollbackTransaction();
+      }
       throw e;
     } finally {
       await qr.release();

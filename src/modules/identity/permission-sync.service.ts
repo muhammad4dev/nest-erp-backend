@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Permission } from './entities/role.entity';
 import { PERMISSIONS } from './constants/permissions.enum';
 import { wrapTenantRepository } from '../../common/repositories/tenant-repository-wrapper';
+import { UserPermissionsService } from './user-permissions.service';
 
 @Injectable()
 export class PermissionSyncService implements OnApplicationBootstrap {
@@ -13,6 +14,7 @@ export class PermissionSyncService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Permission)
     permissionRepoBase: Repository<Permission>,
+    private readonly userPermissionsService: UserPermissionsService,
   ) {
     this.permissionRepo = wrapTenantRepository(permissionRepoBase);
   }
@@ -20,6 +22,9 @@ export class PermissionSyncService implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     this.logger.log('Synchronizing permissions...');
     await this.syncPermissions();
+
+    this.logger.log('Synchronizing user denormalized permissions...');
+    await this.userPermissionsService.syncAllUsersPermissions();
   }
 
   private async syncPermissions() {
